@@ -1,0 +1,1 @@
+/usr/bin/cc -g   CMakeFiles/Shell.dir/nush.c.o CMakeFiles/Shell.dir/svec.c.o CMakeFiles/Shell.dir/tokens.c.o  -o Shell 

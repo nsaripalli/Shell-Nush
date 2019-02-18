@@ -1,0 +1,9 @@
+-----------------------   BNF ------------------------
+command:= <program> <arg>...
+		| <command>'; ' <command>
+		| <command> && <command>
+		| <command> || <command>
+		| <command> &
+		| <command> '<' <file>
+		| <file> '>' <command>
+		| <command> | <command>

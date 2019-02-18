@@ -3,4 +3,4 @@ project(Shell C)
 
 set(CMAKE_C_STANDARD 99)
 
-add_executable(Shell main.c)
+add_executable(Shell nush.c svec.c tokens.c)

@@ -1,0 +1,40 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/home/nsaripalli/CLionProjects/Shell/nush.c
+unistd.h
+-
+stdlib.h
+-
+string.h
+-
+stdio.h
+-
+sys/types.h
+-
+sys/wait.h
+-
+dirent.h
+-
+assert.h
+-
+sys/stat.h
+-
+fcntl.h
+-
+tokens.h
+/home/nsaripalli/CLionProjects/Shell/tokens.h
+svec.h
+/home/nsaripalli/CLionProjects/Shell/svec.h
+
+/home/nsaripalli/CLionProjects/Shell/svec.h
+
+/home/nsaripalli/CLionProjects/Shell/tokens.h
+svec.h
+/home/nsaripalli/CLionProjects/Shell/svec.h
+
