@@ -18,7 +18,4 @@ void  svec_put(svec* sv, int ii, char* item);
 
 void svec_push_back(svec* sv, char* item);
 
-void svec_sort(svec* sv);
-
-char** svec_to_array(svec* command);
 #endif

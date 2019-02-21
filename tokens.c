@@ -167,6 +167,7 @@ svec *getInput() {
         return 0;
     }
     tokens = tokenize(line);
+    free(line);
 
     return tokens;
 }
@@ -184,6 +185,7 @@ svec *getFileInput(int file) {
         return 0;
     }
     tokens = tokenize(line);
+    free(line);
 
     return tokens;
 }

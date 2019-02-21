@@ -11,10 +11,30 @@
 #include "tokens.h"
 #include "svec.h"
 
+/*
+ -----------------------   BNF ------------------------
+command:= <program> <arg>...
+        | <command>'; ' <command>
+        | <command> && <command>
+        | <command> || <command>
+        | <command> &
+        | <command> '<' <file>
+        | <file> '>' <command>
+        | <command> | <command>
+        | cd <file>
+        | exit
+        | pwd
+        | ls
+
+ */
+
 
 int eval(svec *command);
 
-//Based off of lecture notes 11
+//Based off of lecture notes
+/*
+ * Pipes the left expression into the right side
+ */
 int
 pipe_eval(svec *left, svec *right) {
     int cpid, rv;
@@ -53,8 +73,9 @@ pipe_eval(svec *left, svec *right) {
     return -1;
 }
 
+//Based on lectures notes
 //Returns cpid
-//TODO WAIT FOR CHILD
+//WAIT FOR CHILD
 int
 execute_background(svec *left) {
     int cpid;
@@ -62,8 +83,7 @@ execute_background(svec *left) {
 
     if ((cpid = fork())) {
 
-        int st;
-//        waitpid(cpid, &st, 0);
+
         return 0;
     } else {
         exit(eval(left));
@@ -72,10 +92,9 @@ execute_background(svec *left) {
     return -1;
 }
 
+//Based on lectures notes
 int
 execute_pipe(svec *left, svec *right) {
-    int opid = getpid();
-    int opar = getppid();
     int cpid;
 
 
@@ -119,6 +138,7 @@ int redirIn(svec *cmd, char *file) {
     return -1;
 }
 
+//Based on lectures notes
 int redirOut(svec *cmd, char *file) {
     int cpid;
     if ((cpid = fork())) {
@@ -133,8 +153,8 @@ int redirOut(svec *cmd, char *file) {
     return -1;
 }
 
-//From lecture notes
 
+//Based on lectures notes
 int
 ls(const char *dir) {
     int rv;
@@ -158,21 +178,18 @@ ls(const char *dir) {
     return 0;
 }
 
-int cd(const char *location) {
-    if (location == 0) {
-        perror("must specify directory after cd");
-    } else {
-        int output = chdir(location);
-        if (output != 0) { perror("cd failed"); }
+int cd(const char *dir) {
+    if (dir == 0) {
+        perror("cd has invalid number of arguments");
+        return -1;
     }
+    if ((chdir(dir) != 0)) { perror("cd failed"); }
     return 0;
 }
 
 
 int
 execute_ret_code(char **cmd) {
-    int opid = getpid();
-    int opar = getppid();
     int cpid;
 
 
@@ -210,10 +227,26 @@ slice(svec *xs, int i0, int i1) {
 
 
 int
-find_first_index(svec *toks, const int number_of_operators, const char *ops[]) {
+find_first_index(svec *toks) {
+    const char *ops[] = {";", "|", ">", "<", "&", "||", "&&"};
+    const int number_of_operators = 7;
     int tok_size = toks->size;
     int current_first_index = tok_size + 1;
     const char *current_operator;
+    //Prioritize the ; operator
+    for (int ii = 0; ii < tok_size; ++ii) {
+        if (streq(toks->data[ii], ops[0]) && (ii < current_first_index)) {
+            return ii;
+        }
+    }
+
+    //Priortizie teh | operator
+    for (int ii = 0; ii < tok_size; ++ii) {
+        if (streq(toks->data[ii], ops[1]) && (ii < current_first_index)) {
+            return ii;
+        }
+    }
+
     for (int jj = number_of_operators - 1; jj >= 0; --jj) {
         current_operator = ops[jj];
         for (int ii = 0; ii < tok_size; ++ii) {
@@ -232,9 +265,8 @@ find_first_index(svec *toks, const int number_of_operators, const char *ops[]) {
 
 
 int eval(svec *command) {
-    const char *ops[] = {"|", ">", "<", "&", "||", "&&", ";"};
-    const int number_of_ops = 7;
-    int first_index = find_first_index(command, number_of_ops, ops);
+
+    int first_index = find_first_index(command);
 
 
     if (first_index != -1) {
@@ -251,28 +283,36 @@ int eval(svec *command) {
             redirIn(left, right->data[0]);
         } else if (strcmp(first_index_op, "&") == 0) {
             execute_background(left);
-//            printf("&");
         } else if (strcmp(first_index_op, "||") == 0) {
             int left_exit_code = execute_ret_code(left->data);
             if (left_exit_code != 0) {
                 eval(right);
             }
+            return (left_exit_code);
         } else if (strcmp(first_index_op, "&&") == 0) {
             int left_exit_code = execute_ret_code(left->data);
             if (left_exit_code == 0) {
                 exit(eval(right));
             }
-            exit(left_exit_code);
-            printf("here");
+            return (left_exit_code);
         } else if (strcmp(first_index_op, ";") == 0) {
             eval(left);
             eval(right);
+            //Wait for the background processes
+            int *st = NULL;
+            wait(st);
+            free(st);
         }
 
+        free_svec(left);
+        free_svec(right);
+
     } else if (strcmp(command->data[0], "pwd") == 0) {
-        char *buf = alloca(255);
-        char *size = getcwd(buf, 255);
-//        fwrite(buf,)
+        char *buf = getcwd(0, 255);
+        fwrite(buf, strlen(buf), 1, stdout);
+        printf("\n");
+        fflush(stdout);
+        free(buf);
     } else if (strcmp(command->data[0], "cd") == 0) {
         if (command->size != 2) {
             perror("cd has invalid number of arguments");
@@ -280,6 +320,7 @@ int eval(svec *command) {
             cd(command->data[1]);
         }
     } else if (strcmp(command->data[0], "exit") == 0) {
+	free_svec(command);
         exit(0);
     } else if (strcmp(command->data[0], "ls") == 0) {
         if (command->size != 1) {
@@ -290,19 +331,26 @@ int eval(svec *command) {
             ls(buf);
         }
     } else {
-        //Run command as usual
         char **out = command->data;
 
         return execute_ret_code(out);
     }
 
+
     return 0;
 }
 
-
+/**
+ * Runs the nush, a mini shell, program
+ *
+ * @param argc number of arguments
+ * @param argv includes optional file
+ * @return exit code of 0 if sucessful
+ */
 int
 main(int argc, char *argv[]) {
     char cmd[256];
+    svec *next_line;
 
     if (argc != 1) {
 
@@ -310,22 +358,20 @@ main(int argc, char *argv[]) {
 
 
         fflush(stdout);
-        svec *next_line;
         do {
             next_line = getFileInput(file);
             eval(next_line);
             fflush(stdout);
+            free_svec(next_line);
         } while (next_line != 0);
 
     } else {
         while (1) {
             printf("nush$ ");
             fflush(stdout);
-            svec *next_line = getInput();
-            int out = eval(next_line);
-//            if (out == 1) {
-//                exit(0);
-//            }
+            next_line = getInput();
+            eval(next_line);
+            free_svec(next_line);
             fflush(stdout);
         }
     }
